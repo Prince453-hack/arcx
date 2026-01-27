@@ -9,6 +9,7 @@ import { dark } from "@clerk/themes";
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
+import { ConvexClientProvider } from "@/components/convex-client-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -45,13 +46,15 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <SignedOut>
-              <SignInButton />
-            </SignedOut>
-            <SignedIn>
-              <SignedOut />
-            </SignedIn>
-            {children}
+            <ConvexClientProvider>
+              <SignedOut>
+                <SignInButton />
+              </SignedOut>
+              <SignedIn>
+                <SignedOut />
+              </SignedIn>
+              {children}
+            </ConvexClientProvider>
           </ThemeProvider>
         </body>
       </html>
