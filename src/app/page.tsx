@@ -1,5 +1,3 @@
-import { refresh } from "next/cache";
-
 export default function Home() {
   return (
     <div className="">

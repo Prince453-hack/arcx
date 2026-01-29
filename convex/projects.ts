@@ -1,7 +1,32 @@
-import { mutation } from "./_generated/server";
+import { v } from "convex/values";
+import { mutation, query } from "./_generated/server";
 
 export const create = mutation({
-  handler(ctx, _) {
-    return null;
+  args: {
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+    await ctx.db.insert("project", {
+      name: args.name,
+      ownerId: identity?.subject,
+    });
+  }, 
+});
+
+export const get = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return [];
+    }
+    return await ctx.db
+      .query("project")
+      .withIndex("byOwner", (q) => q.eq("ownerId", identity.subject))
+      .collect();
   },
 });
