@@ -5,6 +5,7 @@ export default defineSchema({
   project: defineTable({
     name: v.string(),
     ownerId: v.string(),
+    updatedAt: v.number(),
     importStatus: v.optional(
       v.union(
         v.literal("importing"),
@@ -12,5 +13,14 @@ export default defineSchema({
         v.literal("failed"),
       ),
     ),
+    exportStatus: v.optional(
+      v.union(
+        v.literal("exporting"),
+        v.literal("completed"),
+        v.literal("failed"),
+        v.literal("cancelled"),
+      ),
+    ),
+    exportRepoUrl: v.optional(v.string()),
   }).index("byOwner", ["ownerId"]),
 });
