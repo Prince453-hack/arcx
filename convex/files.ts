@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { verifyAuth } from "./auth";
+import { Id } from "./_generated/dataModel";
 
 export const getFiles = query({
   args: {
@@ -169,7 +170,153 @@ export const createFolder = mutation({
       parentId: args.parentId,
       updatedAt: Date.now(),
     });
+
+    await ctx.db.patch("project", args.projectId, {
+      updatedAt: Date.now(),
+    });
   },
 });
 
-const renameFile = mutation({ args: {}, handler: async (ctx, args) => {} });
+export const renameFile = mutation({
+  args: {
+    id: v.id("files"),
+    newName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await verifyAuth(ctx);
+    const files = await ctx.db.get("files", args.id);
+
+    if (!files) {
+      throw new Error("File not found");
+    }
+
+    const project = await ctx.db.get("project", files.projectId);
+
+    if (!project) {
+      throw new Error("Project not found");
+    }
+
+    if (project.ownerId !== identity.subject) {
+      throw new Error("Not authorized");
+    }
+
+    const siblings = await ctx.db
+      .query("files")
+      .withIndex("by_project_parent", (q) =>
+        q.eq("projectId", files.projectId).eq("parentId", files.parentId),
+      )
+      .collect();
+
+    const existing = siblings.find(
+      (sib) =>
+        sib.name === args.newName &&
+        sib.type === files.type &&
+        sib._id !== args.id,
+    );
+
+    if (existing) {
+      throw new Error(
+        `A ${files.type} with that name already exists in this folder`,
+      );
+    }
+
+    await ctx.db.patch("files", args.id, {
+      name: args.newName,
+      updatedAt: Date.now(),
+    });
+
+    await ctx.db.patch("project", files.projectId, {
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const deleteFile = mutation({
+  args: {
+    id: v.id("files"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await verifyAuth(ctx);
+    const files = await ctx.db.get("files", args.id);
+
+    if (!files) {
+      throw new Error("File not found");
+    }
+
+    const project = await ctx.db.get("project", files.projectId);
+
+    if (!project) {
+      throw new Error("Project not found");
+    }
+
+    if (project.ownerId !== identity.subject) {
+      throw new Error("Not authorized");
+    }
+
+    const deleteRecursive = async (fileId: Id<"files">) => {
+      const item = await ctx.db.get("files", fileId);
+
+      if (!item) return;
+
+      if (item.type === "folder") {
+        const children = await ctx.db
+          .query("files")
+          .withIndex("by_project_parent", (q) =>
+            q.eq("projectId", item.projectId).eq("parentId", fileId),
+          )
+          .collect();
+
+        for (const child of children) {
+          await deleteRecursive(child._id);
+        }
+      }
+
+      if (item.storageId) {
+        await ctx.storage.delete(item.storageId);
+      }
+
+      await ctx.db.delete("files", fileId);
+    };
+    await deleteRecursive(args.id);
+
+    await ctx.db.patch("project", files.projectId, {
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const updateFile = mutation({
+  args: {
+    id: v.id("files"),
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await verifyAuth(ctx);
+    const files = await ctx.db.get("files", args.id);
+
+    if (!files) {
+      throw new Error("File not found");
+    }
+
+    const project = await ctx.db.get("project", files.projectId);
+
+    if (!project) {
+      throw new Error("Project not found");
+    }
+
+    if (project.ownerId !== identity.subject) {
+      throw new Error("Not authorized");
+    }
+
+    const now = Date.now();
+
+    await ctx.db.patch("files", args.id, {
+      content: args.content,
+      updatedAt: now,
+    });
+
+    await ctx.db.patch("project", files.projectId, {
+      updatedAt: now,
+    });
+  },
+});
