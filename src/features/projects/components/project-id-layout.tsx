@@ -8,7 +8,7 @@ import "allotment/dist/style.css";
 
 const MIN_SIDEBAR_WIDTH = 200;
 const MAX_SIDEBAR_WIDTH = 800;
-const DEFAULT_CONVERSATION_SIDEBAR_WIDTH = 400;
+const DEFAULT_CONVERSATION_SIDEBAR_WIDTH = 200;
 const DEFAULT_MAIN_SIZE = 1000;
 
 interface ProjectIdLayoutProps {
