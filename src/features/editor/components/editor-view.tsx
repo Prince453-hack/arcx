@@ -1,14 +1,22 @@
-import { useFile } from "@/features/projects/hooks/use-files";
+import { useFile, useUpdateFile } from "@/features/projects/hooks/use-files";
+import Image from "next/image";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { useEditor } from "../hooks/use-editor";
+import CodeEditor from "./code-editor";
 import FileBreadCrumbs from "./file-breadcumbs";
 import TopNavigation from "./top-navigation";
-import Image from "next/image";
-import CodeEditor from "./code-editor";
+import { useRef } from "react";
+
+const DEBOUNCE_MS = 1500;
 
 const EditorView = ({ projectId }: { projectId: Id<"project"> }) => {
   const { activeTabId } = useEditor(projectId);
   const activeFile = useFile(activeTabId);
+  const updateFile = useUpdateFile();
+  const timeOut = useRef<NodeJS.Timeout | null>(null);
+
+  const isActiveBinary = activeFile && activeFile.storageId;
+  const isActiveText = activeFile && !activeFile.storageId;
 
   return (
     <div className="h-full flex flex-col">
@@ -23,7 +31,24 @@ const EditorView = ({ projectId }: { projectId: Id<"project"> }) => {
           </div>
         )}
 
-        {activeFile && <CodeEditor fileName={activeFile.name} />}
+        {isActiveText && (
+          <CodeEditor
+            fileName={activeFile.name}
+            key={activeFile._id}
+            initialValue={activeFile.content || ""}
+            onChange={(content: string) => {
+              if (timeOut.current) {
+                clearTimeout(timeOut.current);
+              }
+
+              timeOut.current = setTimeout(() => {
+                updateFile({ id: activeFile._id, content });
+              }, DEBOUNCE_MS);
+            }}
+          />
+        )}
+
+        {isActiveBinary && <p>TODO</p>}
       </div>
     </div>
   );
