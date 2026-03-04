@@ -1,10 +1,11 @@
 "use client";
 
+import EditorView from "@/features/editor/components/editor-view";
 import { cn } from "@/lib/utils";
-import { Id } from "../../../../convex/_generated/dataModel";
+import { Allotment } from "allotment";
 import { useState } from "react";
 import { FaGithub } from "react-icons/fa";
-import { Allotment } from "allotment";
+import { Id } from "../../../../convex/_generated/dataModel";
 import { FileExplorer } from "./file-explorer";
 
 const MIN_SIDEBAR_WIDTH = 200;
@@ -75,7 +76,7 @@ export const ProjectIdView = ({ projectId }: { projectId: Id<"project"> }) => {
               <FileExplorer projectId={projectId} />
             </Allotment.Pane>
             <Allotment.Pane>
-              <p>Editor View</p>
+              <EditorView projectId={projectId} />
             </Allotment.Pane>
           </Allotment>
         </div>
