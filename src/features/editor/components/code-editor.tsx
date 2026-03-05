@@ -7,6 +7,7 @@ import { customSetup } from "../extensions/custom-setup";
 import { getLanguageExtension } from "../extensions/language-extension";
 import { minimap } from "../extensions/minimap";
 import { customTheme } from "../extensions/theme";
+import { search } from "@codemirror/search";
 
 interface Props {
   fileName: string;
@@ -37,6 +38,7 @@ const CodeEditor = ({ fileName, initialValue, onChange }: Props) => {
         keymap.of([indentWithTab]),
         minimap(),
         indentationMarkers(),
+        search(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             onChange(view.state.doc.toString());
